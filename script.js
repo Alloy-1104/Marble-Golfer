@@ -99,7 +99,7 @@ const ctx = canvas.getContext("2d");
 
 // setting player marble
 const player_attribute = {
-  radius:20
+  radius: 20
 }
 const player = new Player({
   pos: new Vector2(80, 80),
@@ -139,8 +139,8 @@ document.addEventListener('mousemove', function (e) { mouse_event.pos = new Vect
 
 // get key event
 var key_event = {};
-document.addEventListener("keyup",function(e){key_event[e.key]={up:!0};/*console.log(key_event)*/});
-document.addEventListener("keydown",function(e){key_event[e.key]={down:!0};/*console.log(key_event)*/});
+document.addEventListener("keyup", function (e) { key_event[e.key] = { up: !0 };/*console.log(key_event)*/ });
+document.addEventListener("keydown", function (e) { key_event[e.key] = { down: !0 };/*console.log(key_event)*/ });
 // run per tick
 function tick() {
   logic();
@@ -149,7 +149,7 @@ function tick() {
 
 // set const
 const FLICK_POWER = 0.1;
-const RESISTANCE = 0.9;
+const RESISTANCE = 0.95;
 const POWER_LIM_MIN = 10;
 const POWER_LIM_MAX = 200;
 
@@ -168,11 +168,11 @@ function logic() {
     // clamp power
     else if (POWER_LIM_MAX < flick.motion.magnitude) {
       //console.log("info : too max power / power was clamped");
-      player.motion = Vector2.times(Vector2.times(flick.motion.normalized , POWER_LIM_MAX) , FLICK_POWER);
+      player.motion = Vector2.times(Vector2.times(flick.motion.normalized, POWER_LIM_MAX), FLICK_POWER);
     }
     // correct
     else {
-      player.motion = Vector2.times(flick.motion , FLICK_POWER);
+      player.motion = Vector2.times(flick.motion, FLICK_POWER);
     }
   }
   // cancel flick by C key
@@ -189,23 +189,23 @@ function logic() {
 
   // move player marble
   move();
-  
+
 }
 
 function move() {
-  if (is_colliding(player.pos.x + player.motion.x , player.pos.y)) {
+  if (is_colliding(player.pos.x + player.motion.x, player.pos.y)) {
     let length = Math.floor(Math.abs(player.motion.x)) + 1;
-    for (let i = 0 ; i <= length; i++) {
-      if(0 < player.motion.x) {
+    for (let i = 0; i <= length; i++) {
+      if (0 < player.motion.x) {
         if (is_colliding(player.pos.x + i, player.pos.y)) {
           player.pos.x += i;
-          player.pos.x --;
+          player.pos.x--;
           break;
         }
       } else {
         if (is_colliding(player.pos.x - i, player.pos.y)) {
           player.pos.x -= i;
-          player.pos.x ++;
+          player.pos.x++;
           break;
         }
       }
@@ -214,19 +214,19 @@ function move() {
   } else {
     player.pos.x += player.motion.x;
   }
-  if (is_colliding(player.pos.x , player.pos.y + player.motion.y)) {
+  if (is_colliding(player.pos.x, player.pos.y + player.motion.y)) {
     let length = Math.floor(Math.abs(player.motion.y)) + 1;
-    for (let i = 0 ; i <= length; i++) {
-      if(0 < player.motion.y) {
+    for (let i = 0; i <= length; i++) {
+      if (0 < player.motion.y) {
         if (is_colliding(player.pos.x, player.pos.y + i)) {
           player.pos.y += i;
-          player.pos.y --;
+          player.pos.y--;
           break;
         }
       } else {
         if (is_colliding(player.pos.x, player.pos.y - i)) {
           player.pos.y -= i;
-          player.pos.y ++;
+          player.pos.y++;
           break;
         }
       }
@@ -260,10 +260,10 @@ function intersect_rect_circle(circle_x, circle_y, radius, rect_x, rect_y, rect_
   return false;
 }
 
-function is_colliding(x,y) {
+function is_colliding(x, y) {
   let result = false;
   for (const wall_data of stage_data[current_stage]) {
-    if (intersect_rect_circle(x,y,player.attribute.radius,...wall_data.rect)) {
+    if (intersect_rect_circle(x, y, player.attribute.radius, ...wall_data.rect)) {
       result = true;
       break;
     }
@@ -292,4 +292,14 @@ function render() {
   ctx.arc(...player.pos.pack, player.attribute.radius, 0, 2 * Math.PI);
   ctx.fill();
 }
+
+function create_round_rect_line_path(ctx, x, y, w, h, r) {
+  let theta = Math.atan(h / w);
+  ctx.beginPath();
+  ctx.arc(x, y, r, theta + Math.PI * 0.5, theta + Math.PI * 1.5, false);
+  ctx.lineTo(x + w + r * Math.sin(theta), y + h - r * Math.cos(theta));
+  ctx.arc(x + w, y + h, r, theta - Math.PI * 0.5, theta + Math.PI * 0.5, false);
+  ctx.closePath();
+}
+
 setInterval(tick, 1000 / 60);
