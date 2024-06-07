@@ -175,6 +175,11 @@ function logic() {
       player.motion = Vector2.times(flick.motion, FLICK_POWER);
     }
   }
+  if (flick.charging) {
+    flick.end_point = mouse_event.pos;
+    flick.motion = Vector2.sub(flick.end_point, flick.start_point);
+  }
+
   // cancel flick by C key
   if (key_event.c && flick.charging) {
     if (key_event.c.down) {
@@ -285,20 +290,48 @@ function render() {
     ctx.fillRect(...wall_data.rect);
   }
 
+  // display charge guide
+  ctx.fillStyle = "#abc8f5";
+  if (flick.charging && POWER_LIM_MIN < flick.motion.magnitude) {
+    if (flick.motion.magnitude < POWER_LIM_MAX) {
+      fill_round_rect_line_path(ctx, ...Vector2.add(player.pos, Vector2.times(flick.motion.normalized, player.attribute.radius)).pack, ...flick.motion.pack, 5);
+    } else {
+      fill_round_rect_line_path(ctx, ...Vector2.add(player.pos, Vector2.times(flick.motion.normalized, player.attribute.radius)).pack, ...Vector2.times(flick.motion.normalized, POWER_LIM_MAX).pack, 5);
+    }
+    ctx.fill();
+  }
+
+  if (flick.charging) {
+    ctx.fillStyle = "#abc8f5";
+    ctx.moveTo(...flick.start_point.inverse.pack);
+    ctx.beginPath();
+    ctx.arc(...flick.start_point.inverse.pack, 10, 0, Math.PI * 2)
+    ctx.fill();
+  }
+
   // player
-  ctx.fillStyle = "#4287f5";
+  ctx.fillStyle = "#629df5";
   ctx.moveTo(...player.pos.pack);
   ctx.beginPath();
-  ctx.arc(...player.pos.pack, player.attribute.radius, 0, 2 * Math.PI);
+  ctx.arc(...player.pos.pack, player.attribute.radius, 0, Math.PI * 2);
   ctx.fill();
+
+
 }
 
-function create_round_rect_line_path(ctx, x, y, w, h, r) {
+function fill_round_rect_line_path(ctx, x, y, w, h, r) {
   let theta = Math.atan(h / w);
   ctx.beginPath();
-  ctx.arc(x, y, r, theta + Math.PI * 0.5, theta + Math.PI * 1.5, false);
-  ctx.lineTo(x + w + r * Math.sin(theta), y + h - r * Math.cos(theta));
-  ctx.arc(x + w, y + h, r, theta - Math.PI * 0.5, theta + Math.PI * 0.5, false);
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + w, y + h, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x + r * Math.cos(theta - Math.PI * 0.5), y + r * Math.sin(theta - Math.PI * 0.5));
+  ctx.lineTo(x + w + r * Math.cos(theta - Math.PI * 0.5), y + h + r * Math.sin(theta - Math.PI * 0.5));
+  ctx.lineTo(x + w + r * Math.cos(theta + Math.PI * 0.5), y + h + r * Math.sin(theta + Math.PI * 0.5));
+  ctx.lineTo(x + r * Math.cos(theta + Math.PI * 0.5), y + r * Math.sin(theta + Math.PI * 0.5));
   ctx.closePath();
 }
 
