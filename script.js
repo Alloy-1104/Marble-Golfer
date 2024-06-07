@@ -122,7 +122,6 @@ const stage_data = {
 }
 
 // get mouse position
-
 var flick = {
   start_point: Vector2.zero,
   end_point: Vector2.zero,
@@ -132,12 +131,16 @@ var flick = {
 var mouse_event = {
   down: false,
   up: false,
-  pos: Vector2.zero
+  pos: Vector2.zero,
 }
-canvas.addEventListener('mousedown', function (e) { mouse_event.down = true; });
-canvas.addEventListener('mouseup', function (e) { mouse_event.up = true; });
-canvas.addEventListener('mousemove', function (e) { mouse_event.pos = new Vector2(e.clientX - canvas.getBoundingClientRect().left, canvas.height - e.clientY + canvas.getBoundingClientRect().top); });
+document.addEventListener('mousedown', function (e) { mouse_event.down = true; });
+document.addEventListener('mouseup', function (e) { mouse_event.up = true; });
+document.addEventListener('mousemove', function (e) { mouse_event.pos = new Vector2(e.clientX - canvas.getBoundingClientRect().left, canvas.height - e.clientY + canvas.getBoundingClientRect().top).inverse; });
 
+// get key event
+var key_event = {};
+document.addEventListener("keyup",function(e){key_event[e.key]={up:!0};/*console.log(key_event)*/});
+document.addEventListener("keydown",function(e){key_event[e.key]={down:!0};/*console.log(key_event)*/});
 // run per tick
 function tick() {
   logic();
@@ -145,27 +148,44 @@ function tick() {
 }
 
 // set const
-const FLICK_POWER = 0.2;
+const FLICK_POWER = 0.1;
 const RESISTANCE = 0.9;
+const POWER_LIM_MIN = 10;
+const POWER_LIM_MAX = 200;
 
 function logic() {
   // calculate flick power and direction
   if (mouse_event.down) { flick.start_point = mouse_event.pos; flick.charging = true; }
-  if (mouse_event.up) {
+  if (mouse_event.up && flick.charging) {
+    // calc
     flick.end_point = mouse_event.pos;
     flick.motion = Vector2.sub(flick.end_point, flick.start_point);
     flick.charging = false;
-    if (1 < flick.motion.magnitude) {
-      player.motion = Vector2.times(flick.motion, FLICK_POWER);
+    // cancel
+    if (flick.motion.magnitude < POWER_LIM_MIN) {
+      //console.log("error : too small power");
     }
-    if (player.motion.magnitude < 1) {
-      player.motion = Vector2.zero;
+    // clamp power
+    else if (POWER_LIM_MAX < flick.motion.magnitude) {
+      //console.log("info : too max power / power was clamped");
+      player.motion = Vector2.times(Vector2.times(flick.motion.normalized , POWER_LIM_MAX) , FLICK_POWER);
+    }
+    // correct
+    else {
+      player.motion = Vector2.times(flick.motion , FLICK_POWER);
+    }
+  }
+  // cancel flick by C key
+  if (key_event.c && flick.charging) {
+    if (key_event.c.down) {
+      flick.charging = false;
     }
   }
 
-  // reset mouse event
+  // reset mouse and key event
   if (mouse_event.down) { mouse_event.down = false; }
   if (mouse_event.up) { mouse_event.up = false; }
+  key_event = {};
 
   // move player marble
   move();
@@ -248,7 +268,6 @@ function is_colliding(x,y) {
       break;
     }
   }
-  console.log(result);
   return result;
 }
 
