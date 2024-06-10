@@ -64,6 +64,14 @@ class Vector2 {
   static isVertical(v1, v2) {
     return (Vector2.dot(v1, v2) === 0);
   }
+  static clamp(vector2, min, max) {
+    let length = vector2.magnitude;
+    length = clamp(length, min, max);
+    return Vector2.times(vector2.normalized, length);
+  }
+  static rotate(vector2, theta) {
+    return new Vector2(vector2.x * Math.cos(theta) - vector2.y * Math.sin(theta), vector2.x * Math.sin(theta) + vector2.y * Math.cos(theta));
+  }
   static get zero() {
     return new Vector2(0, 0);
   }
@@ -293,11 +301,13 @@ function render() {
   // display charge guide
   ctx.fillStyle = "#abc8f5";
   if (flick.charging && POWER_LIM_MIN < flick.motion.magnitude) {
-    if (flick.motion.magnitude < POWER_LIM_MAX) {
-      fill_round_rect_line_path(ctx, ...Vector2.add(player.pos, Vector2.times(flick.motion.normalized, player.attribute.radius)).pack, ...flick.motion.pack, 5);
-    } else {
-      fill_round_rect_line_path(ctx, ...Vector2.add(player.pos, Vector2.times(flick.motion.normalized, player.attribute.radius)).pack, ...Vector2.times(flick.motion.normalized, POWER_LIM_MAX).pack, 5);
-    }
+    let arrow_base = Vector2.add(player.pos, Vector2.times(flick.motion.normalized, player.attribute.radius));
+    let arrow_vector = Vector2.clamp(flick.motion, POWER_LIM_MIN, POWER_LIM_MAX)
+    fill_round_rect_line_path(ctx, ...arrow_base.pack, ...arrow_vector.pack, 3);
+    ctx.fill();
+    fill_round_rect_line_path(ctx, ...(Vector2.add(arrow_base, arrow_vector)).pack, ...Vector2.times(Vector2.rotate(arrow_vector.normalized.inverse, Math.PI / 4), 20).pack, 3);
+    ctx.fill();
+    fill_round_rect_line_path(ctx, ...(Vector2.add(arrow_base, arrow_vector)).pack, ...Vector2.times(Vector2.rotate(arrow_vector.normalized.inverse, - Math.PI / 4), 20).pack, 3);
     ctx.fill();
   }
 
@@ -315,8 +325,6 @@ function render() {
   ctx.beginPath();
   ctx.arc(...player.pos.pack, player.attribute.radius, 0, Math.PI * 2);
   ctx.fill();
-
-
 }
 
 function fill_round_rect_line_path(ctx, x, y, w, h, r) {
