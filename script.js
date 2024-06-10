@@ -100,10 +100,27 @@ class Player {
   }
 }
 
+class Camera {
+  constructor(args) {
+    this.pos = args.pos;
+    this.focus_pos = Vector2.zero;
+    this.smoothness = args.smoothness;
+  }
+  calc_pos() {
+    this.pos = Vector2.times(Vector2.add(Vector2.times(this.pos, this.smoothness), this.focus_pos), 1 / (1 + this.smoothness));
+  }
+}
+
+
+// ----------------------------------------------------------------------------------------------------
+// DEFINE
+// ----------------------------------------------------------------------------------------------------
 
 // setting canvas
 const canvas = document.getElementById("game-canvas");
+//const ctx = canvas.getContext("2d");
 const ctx = canvas.getContext("2d");
+//CanvasRenderingContext2D.prototype.
 
 // setting player marble
 const player_attribute = {
@@ -113,6 +130,12 @@ const player = new Player({
   pos: new Vector2(80, 80),
   motion: Vector2.zero,
   attribute: player_attribute
+})
+
+// setting camera object
+const camera = new Camera({
+  pos: new Vector2(80, 80),
+  smoothness: 3
 })
 
 // setting terrain
@@ -160,6 +183,12 @@ const FLICK_POWER = 0.1;
 const RESISTANCE = 0.95;
 const POWER_LIM_MIN = 10;
 const POWER_LIM_MAX = 200;
+
+
+
+// ----------------------------------------------------------------------------------------------------
+// LOGIC
+// ----------------------------------------------------------------------------------------------------
 
 function logic() {
   // calculate flick power and direction
@@ -284,22 +313,37 @@ function is_colliding(x, y) {
   return result;
 }
 
+
+// ----------------------------------------------------------------------------------------------------
+// RENDER
+// ----------------------------------------------------------------------------------------------------
+
+const BACKGROUND_COLOR = "#fefefe";
+const STAGE_COLOR = "#ddd";
+const GUIDE_COLOR = "#abc8f5";
+
 function render() {
+  // calc camera position
+  if (flick.charging) {
+    camera.focus_pos = Vector2.add(player.pos, flick.motion);
+  }
+  camera.calc_pos();
+
   // init
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // background
-  ctx.fillStyle = "#fefefe";
+  ctx.fillStyle =BACKGROUND_COLOR;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // stage
   for (let wall_data of stage_data[current_stage]) {
-    ctx.fillStyle = "#ddd";
+    ctx.fillStyle = STAGE_COLOR;
     ctx.fillRect(...wall_data.rect);
   }
 
   // display charge guide
-  ctx.fillStyle = "#abc8f5";
+  ctx.fillStyle = GUIDE_COLOR;
   if (flick.charging && POWER_LIM_MIN < flick.motion.magnitude) {
     let arrow_base = Vector2.add(player.pos, Vector2.times(flick.motion.normalized, player.attribute.radius));
     let arrow_vector = Vector2.clamp(flick.motion, POWER_LIM_MIN, POWER_LIM_MAX)
@@ -342,5 +386,6 @@ function fill_round_rect_line_path(ctx, x, y, w, h, r) {
   ctx.lineTo(x + r * Math.cos(theta + Math.PI * 0.5), y + r * Math.sin(theta + Math.PI * 0.5));
   ctx.closePath();
 }
+
 
 setInterval(tick, 1000 / 60);
