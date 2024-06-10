@@ -163,7 +163,7 @@ const POWER_LIM_MAX = 200;
 
 function logic() {
   // calculate flick power and direction
-  if (mouse_event.down) { flick.start_point = mouse_event.pos; flick.charging = true; }
+  if (mouse_event.down && player.motion.magnitude < 0.1) { flick.start_point = mouse_event.pos; flick.charging = true; }
   if (mouse_event.up && flick.charging) {
     // calc
     flick.end_point = mouse_event.pos;
